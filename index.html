@@ -11,11 +11,20 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%}
+    /* Prevent Android font auto-scaling and improve smoothing */
+    html, body { -webkit-text-size-adjust: 100%; -moz-text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-font-smoothing:antialiased; }
+
     body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 20% 10%, #0b2540 0%, #071427 40%, #04101a 100%);font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;color:#f0f7ff}
+
     .wrap{width:980px;max-width:96%;display:grid;grid-template-columns:360px 1fr;gap:22px;align-items:start}
-    header{grid-column:1/-1;display:flex;align-items:center;gap:14px;margin-bottom:6px}
-    .logo{width:78px;height:78px;border-radius:16px;background:linear-gradient(135deg,var(--accent),#ffd98a);display:flex;align-items:center;justify-content:center;font-weight:900;color:#08202a;font-size:26px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
-    h1{font-size:24px;margin:0;letter-spacing:1px}
+
+    /* header must sit above confetti canvas on Android — make it positioned and higher z-index */
+    header{grid-column:1/-1;display:flex;align-items:center;gap:14px;margin-bottom:6px;flex-wrap:wrap;position:relative;z-index:20}
+
+    .logo{width:78px;height:78px;border-radius:16px;background:linear-gradient(135deg,var(--accent),#ffd98a);display:flex;align-items:center;justify-content:center;font-weight:900;color:#07202a;font-size:26px;box-shadow:0 8px 30px rgba(0,0,0,0.6);flex-shrink:0}
+
+    /* make sure h1 can shrink/wrap on small screens and remains visible */
+    h1{font-size:24px;margin:0;letter-spacing:1px;min-width:0;word-break:break-word}
     p.lead{margin:0;color:var(--muted);font-size:13px}
 
     .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.015));border-radius:12px;padding:16px;box-shadow:0 10px 40px rgba(2,6,23,0.7)}
@@ -47,7 +56,8 @@
     .badge{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.03);font-weight:700}
 
     /* confetti canvas sits above everything when active */
-    #confetti{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:999}
+    /* Put canvas behind UI to avoid rendering bugs on some Android browsers */
+    #confetti{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:1}
 
     /* Android-specific tweaks (applied when JS detects Android UA) */
     .android .wrap{max-width:98%;padding:8px}
@@ -77,8 +87,8 @@
   <canvas id="confetti"></canvas>
   <div class="wrap">
     <header>
-      <div class="logo">A.P</div>
-      <div>
+      <div class="logo" aria-hidden="true">A.P</div>
+      <div style="min-width:0">
         <h1>ANKKU SIS — Tic Tac Toe ( MASOOM)</h1>
         <p class="lead">A silly, personalized version just for your bestie <strong id="bestieNameDisplay">ANKKU SIS</strong> — funny messages, confetti and goofy sounds!</p>
       </div>
@@ -259,7 +269,7 @@
     function smallConfetti(){ createConfetti(40); }
     function createConfetti(n){ confettiPieces = []; for(let i=0;i<n;i++){ confettiPieces.push({x:Math.random()*confettiCanvas.width, y:Math.random()*confettiCanvas.height/2, r:Math.random()*6+4, dx:(Math.random()-0.5)*6, dy:Math.random()*4+2, color:`hsl(${Math.random()*60+200},80%,60%)`, tilt:Math.random()*0.4-0.2}); } if(!confettiAnim) confettiAnim = requestAnimationFrame(confettiLoop); }
     let confettiAnim = null;
-    function confettiLoop(){ confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height); for(const p of confettiPieces){ p.x += p.dx; p.y += p.dy; p.tilt += 0.02; confettiCtx.save(); confettiCtx.translate(p.x,p.y); confettiCtx.rotate(p.tilt); confettiCtx.fillStyle = p.color; confettiCtx.fillRect(-p.r/2, -p.r/2, p.r, p.r*0.6); confettiCtx.restore(); } confettiPieces = confettiPieces.filter(p=>p.y < confettiCanvas.height + 30); if(confettiPieces.length>0) confettiAnim = requestAnimationFrame(confettiLoop); else { cancelAnimationFrame(confettiAnim); confettiAnim = null; confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height); } }
+    function confettiLoop(){ confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height); for(const p of confettiPieces){ p.x += p.dx; p.y += p.dy; p.tilt += 0.02; confettiCtx.save(); confettiCtx.translate(p.x,p.y); confettiCtx.rotate(p.tilt); confettiCtx.fillStyle = p.color; confettiCtx.fillRect(-p.r/2, -p.r/2, p.r, p.r*0.6); confettiCtx.restore(); } confettiPieces = confettiPieces.filter(p=>p.y < confettiCanvas.height + 30); if(confettiPieces.length>0) confettiAnim = requestAnimationFrame(confettiLoop); else { if(confettiAnim) cancelAnimationFrame(confettiAnim); confettiAnim = null; confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height); } }
     function clearConfetti(){ confettiPieces=[]; if(confettiAnim){ cancelAnimationFrame(confettiAnim); confettiAnim=null; confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height); } }
 
     // init
